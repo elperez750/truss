@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import users, trades
+from app.api.v1 import router
 
 app = FastAPI(title="Truss API", version="0.1.0")
 
@@ -13,8 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(users.router)
-app.include_router(trades.router)
+app.include_router(router)
 
 @app.get("/")
 def root():
