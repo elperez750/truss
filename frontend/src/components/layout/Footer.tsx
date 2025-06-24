@@ -61,7 +61,7 @@ const Footer = () => {
           <Separator className="my-8" />
           
           <div className="text-center text-sm text-neutral-500">
-            <p>© 2024 TradeWise. All rights reserved.</p>
+            <p>© 2025 TradeWise. All rights reserved.</p>
           </div>
         </div>
       </footer>
