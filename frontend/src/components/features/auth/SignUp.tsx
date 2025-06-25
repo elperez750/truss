@@ -1,73 +1,37 @@
 'use client'
 
-import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/app/context/AuthContext";
 
 export default function SignUp() {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
 
-    const signInWithGoogle = async () => {
-        setIsLoading(true);
-        setError(null);
-        
+    const { signInWithGoogle, signInWithEmail, isLoading, error } = useAuth();
+
+    const handleSignInWithGoogle = async () => {
         try {
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: "google",
-                options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
-                },
-            });
-            
-         
-            console.log(data)
-            console.log("That was successful")
-
-            if (error) {
-                console.error('OAuth error:', error);
-            }
-
-        } catch (err) {
-            console.error('Sign in error:', err);
-            setError('Failed to sign in with Google');
-        } finally {
-            setIsLoading(false);
+            await signInWithGoogle();
+        } catch (error) {
+            console.error('Sign in error:', error);
         }
     }
 
-    const signInWithEmail = async (e: React.FormEvent) => {
+
+
+    const handleSignInWithEmail = async (e: React.FormEvent) => {
         e.preventDefault();
 
         try {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback`,
-                },
-            });
+            await signInWithEmail(email, password);
+        } catch (error) {
+            console.error('Sign in error:', error);
 
-
-            if (error) {
-                console.error('Sign up error:', error);
-                setError(error.message);
-            } else {
-                // Show success message or redirect
-                setError(null);
-                alert('Check your email for a confirmation link!');
-            }
-        } catch (err) {
-            console.error('Sign up error:', err);
-            setError('Failed to sign up with email');
-        } finally {
-            setIsLoading(false);
         }
     }
 
@@ -91,7 +55,7 @@ export default function SignUp() {
                         )}
                         
                         <Button 
-                            onClick={signInWithGoogle}
+                            onClick={handleSignInWithGoogle}
                             disabled={isLoading}
                             variant="outline"
                             size="lg"
@@ -129,7 +93,7 @@ export default function SignUp() {
                             </div>
                         </div>
 
-                        <form onSubmit={signInWithEmail} className="space-y-5">
+                        <form onSubmit={handleSignInWithEmail} className="space-y-5">
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                                     Email
