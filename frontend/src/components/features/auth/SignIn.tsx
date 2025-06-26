@@ -6,12 +6,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/app/context/AuthContext";
+import { createClient } from "@/lib/supabase/client";
 
-export default function SignUp() {
+export default function SignIn() {
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
+    const [emailExists, setEmailExists] = useState<boolean>(false);
+    const supabase = createClient()
 
     const { signInWithGoogle, signInWithEmail, isLoading, error } = useAuth();
+
+
+    const checkIfEmailExists = async() => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: "12345678",
+        })
+
+        if (error) {
+            if (error.message.includes("Invalid login credentials")) {
+                return true
+            } else if  (error.message.includes("User not found")) {
+                return false
+        } else {
+            throw error
+        }
+
+    return true
+    }
 
     const handleSignInWithGoogle = async () => {
         try {
@@ -115,9 +137,10 @@ export default function SignUp() {
                     className="w-full h-12 text-base font-medium bg-primary-600 hover:bg-primary-700 cursor-pointer"
                     disabled={isLoading}
                 >
-                    {isLoading ? 'Creating account...' : 'Get Started'}
+                    {isLoading ? 'Signing in...' : 'Sign In'}
                 </Button>
             </form>
         </div>
     )
+}
 }

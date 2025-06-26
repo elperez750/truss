@@ -3,9 +3,13 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { Profile } from "@/types";
 
+// The types for the context
 type AuthContextType = {
     user: User | null,
+    profile: Profile | null,
+    setProfile: React.Dispatch<React.SetStateAction<Profile>>,
     isLoading: boolean,
     error: string | null,
     signInWithGoogle: () => Promise<void>,
@@ -13,8 +17,22 @@ type AuthContextType = {
     signOut: () => Promise<void>,
 }
 
+
+const initialProfile: Profile = {
+    id: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    username: "",
+    phoneNumber: "",
+    role: "client",
+    createdAt: "",
+}
+
 export const AuthContext = createContext<AuthContextType>({
-    user: null,
+    user: null, //Will be null at first
+    profile: initialProfile, //Will be null at first
+    setProfile: () => {},
     isLoading: false,
     error: null,
     signInWithGoogle: async () => {},
@@ -23,16 +41,21 @@ export const AuthContext = createContext<AuthContextType>({
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+    const [user, setUser] = useState<User | null>(null); //Will be null at first
+    const [isLoading, setIsLoading] = useState<boolean>(false); //Will be false at first
+    const [error, setError] = useState<string | null>(null); //Will be null at first
+    const [profile, setProfile] = useState<Profile>(initialProfile); //Will be null at first
     const supabase = createClient()
+
 
     // Listen to auth changes
     useEffect(() => {
+
+        // Listen for auth changes, like if the user is logged in or out
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
                 setUser(session?.user || null);
+            
                 setIsLoading(false);
             }
         );
@@ -46,6 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []);
 
+    // Sign in with Google
     const signInWithGoogle = async () => {
         try {
             setIsLoading(true);
@@ -68,7 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const signInWithEmail = async (email: string, password: string) => {
         try {
             setIsLoading(true);
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
             });
@@ -91,7 +115,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, error, signInWithGoogle, signInWithEmail, signOut }}>
+        <AuthContext.Provider value={{ user, profile, setProfile, isLoading, error, signInWithGoogle, signInWithEmail, signOut }}>
             {children}
         </AuthContext.Provider>
     )
