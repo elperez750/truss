@@ -9,7 +9,7 @@ import Link from "next/link";
             </div>
   
             <nav className="hidden md:flex space-x-8">
-              <Link href="/sign-in">
+              <Link href="/authenticate">
                   Sign Up
                 </Link>
               <a href="#" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">

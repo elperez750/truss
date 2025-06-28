@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Profile } from "@/types";
+import { useRouter } from "next/navigation";
 
 // The types for the context
 type AuthContextType = {
@@ -11,7 +12,12 @@ type AuthContextType = {
     profile: Profile | null,
     setProfile: React.Dispatch<React.SetStateAction<Profile>>,
     isLoading: boolean,
-    error: string | null,
+    signInError: string | null,
+    signUpError: string | null,
+    setSignUpError: React.Dispatch<React.SetStateAction<string | null>>,
+    setSignInError: React.Dispatch<React.SetStateAction<string | null>>,
+    signInWithApple: () => Promise<void>,
+    signUpWithEmail: (email: string, password: string) => Promise<boolean>,
     signInWithGoogle: () => Promise<void>,
     signInWithEmail: (email: string, password: string) => Promise<void>,
     signOut: () => Promise<void>,
@@ -34,7 +40,12 @@ export const AuthContext = createContext<AuthContextType>({
     profile: initialProfile, //Will be null at first
     setProfile: () => {},
     isLoading: false,
-    error: null,
+    signInError: null,
+    signUpError: null,
+    setSignUpError: () => {},
+    setSignInError: () => {},
+    signInWithApple: async () => {},
+    signUpWithEmail: async () => false,
     signInWithGoogle: async () => {},
     signInWithEmail: async () => {},
     signOut: async () => {},
@@ -43,9 +54,11 @@ export const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null); //Will be null at first
     const [isLoading, setIsLoading] = useState<boolean>(false); //Will be false at first
-    const [error, setError] = useState<string | null>(null); //Will be null at first
+    const [signUpError, setSignUpError] = useState<string | null>(null); //Will be null at first
+    const [signInError, setSignInError] = useState<string | null>(null); //Will be null at first
     const [profile, setProfile] = useState<Profile>(initialProfile); //Will be null at first
     const supabase = createClient()
+    const router = useRouter();
 
 
     // Listen to auth changes
@@ -83,7 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (error) throw error;
         } catch (error) {
             console.error('Sign in error:', error);
-            setError(error instanceof Error ? error.message : 'An unknown error occurred');
+            setSignInError(error instanceof Error ? error.message : 'An unknown error occurred');
         } finally {
             setIsLoading(false);
         }
@@ -92,15 +105,68 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const signInWithEmail = async (email: string, password: string) => {
         try {
             setIsLoading(true);
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+            
+            if (error) {
+                throw error;
+            }
+            else {
+                router.push("/onboarding/role/")
+            }
+            
+        } catch (error) {
+            console.error('Sign in error:', error);
+            setSignInError(error instanceof Error ? error.message : 'An unknown error occurred');
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+
+    const signInWithApple = async () => {
+        try {
+            setIsLoading(true);
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: "apple",
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                },
+            });
+        } catch (error) {
+            console.error('Sign in error:', error);
+            setSignInError(error instanceof Error ? error.message : 'An unknown error occurred');
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const signUpWithEmail = async (email: string, password: string): Promise<boolean> => {
+        try {
+            setIsLoading(true);
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
             });
             
-            if (error) throw error;
+            if (error) {
+                if (error.message.includes("User already registered")) {
+                    setSignUpError("User already registered")
+                } else {
+                    setSignUpError(error instanceof Error ? error.message : 'An unknown error occurred');
+                }
+                return false;
+            }
+            
+            // Clear any previous errors on success
+            setSignUpError(null);
+            return true;
         } catch (error) {
-            console.error('Sign in error:', error);
-            setError(error instanceof Error ? error.message : 'An unknown error occurred');
+            console.error('Sign up error:', error);
+            setSignUpError(error instanceof Error ? error.message : 'An unknown error occurred');
+            return false;
         } finally {
             setIsLoading(false);
         }
@@ -115,7 +181,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, profile, setProfile, isLoading, error, signInWithGoogle, signInWithEmail, signOut }}>
+        <AuthContext.Provider value={{ user, profile, setProfile, isLoading, signInError, signUpError, signUpWithEmail, signInWithGoogle, signInWithEmail, signOut, setSignUpError, setSignInError, signInWithApple }}>
             {children}
         </AuthContext.Provider>
     )
