@@ -22,7 +22,20 @@ export type Profile = {
     lastName: string;
     username: string;
     phoneNumber: string;
-    role?: 'client' | 'contractor';
+    role: 'client' | 'contractor';
     createdAt: string;
 
+}
+
+
+export interface ClientPreferences extends Profile {
+    preferredContactMethod: 'email' | 'phone' | 'text';
+    location: string;
+    primaryGoal: string;
+
+}
+
+
+export interface ContractorPreferences extends Profile {
+    
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { useAuth } from '@/app/context/AuthContext'
+
 
 
 export async function GET(request: Request) {
@@ -16,7 +16,6 @@ export async function GET(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
 
-
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
@@ -26,6 +25,7 @@ export async function GET(request: Request) {
       } else if (forwardedHost) {
         return NextResponse.redirect(`https://${forwardedHost}${next}`)
       } else {
+
         return NextResponse.redirect(`${origin}${next}`)
       }
     }

@@ -3,48 +3,48 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { Profile } from "@/types";
+import {  ClientProfile, ContractorProfile, Profile, BaseProfile } from "@/types/profileTypes"; 
 import { useRouter } from "next/navigation";
 
 // The types for the context
 type AuthContextType = {
     user: User | null,
     profile: Profile | null,
-    setProfile: React.Dispatch<React.SetStateAction<Profile>>,
+    role: "client" | "contractor" | null,
+    updateProfile: (updates: Partial<Profile>) => void,
+    clearProfile: () => void,
+    setRole: (role: "client" | "contractor" | null) => void,
     isLoading: boolean,
     signInError: string | null,
     signUpError: string | null,
     setSignUpError: React.Dispatch<React.SetStateAction<string | null>>,
     setSignInError: React.Dispatch<React.SetStateAction<string | null>>,
-    signInWithApple: () => Promise<void>,
+    signInWithX: () => Promise<void>,
     signUpWithEmail: (email: string, password: string) => Promise<boolean>,
     signInWithGoogle: () => Promise<void>,
-    signInWithEmail: (email: string, password: string) => Promise<void>,
+    signInWithEmail: (email: string, password: string) => Promise<void>,    
     signOut: () => Promise<void>,
 }
 
 
-const initialProfile: Profile = {
-    id: "",
-    email: "",
-    firstName: "",
-    lastName: "",
-    username: "",
-    phoneNumber: "",
-    role: "client",
-    createdAt: "",
-}
+
+
+    
+
 
 export const AuthContext = createContext<AuthContextType>({
     user: null, //Will be null at first
-    profile: initialProfile, //Will be null at first
-    setProfile: () => {},
+    profile: null, //Will be null at first
+    role: null,
+    updateProfile: () => {},
+    clearProfile: () => {},
+    setRole: () => {},
     isLoading: false,
     signInError: null,
     signUpError: null,
     setSignUpError: () => {},
     setSignInError: () => {},
-    signInWithApple: async () => {},
+    signInWithX: async () => {},
     signUpWithEmail: async () => false,
     signInWithGoogle: async () => {},
     signInWithEmail: async () => {},
@@ -56,7 +56,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState<boolean>(false); //Will be false at first
     const [signUpError, setSignUpError] = useState<string | null>(null); //Will be null at first
     const [signInError, setSignInError] = useState<string | null>(null); //Will be null at first
-    const [profile, setProfile] = useState<Profile>(initialProfile); //Will be null at first
+    const [profile, setProfile] = useState<Profile | null>(null); //Will be null at first
+    const [role, setRole] = useState<"client" | "contractor" | null>(null);
     const supabase = createClient()
     const router = useRouter();
 
@@ -73,6 +74,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         );
 
+
+
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user || null);
@@ -81,6 +84,139 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         return () => subscription.unsubscribe();
     }, []);
+
+
+
+    useEffect(() => {
+        console.log('Loading from localStorage...');
+        try {
+            const savedProfile = localStorage.getItem("truss_profile");
+            const savedRole = localStorage.getItem("truss_role");
+            
+            console.log('savedProfile from localStorage:', savedProfile);
+            console.log('savedRole from localStorage:', savedRole);
+            
+            if (savedProfile && savedProfile !== "null") {
+                const parsedProfile = JSON.parse(savedProfile);
+                console.log('parsed profile:', parsedProfile);
+                setProfile(parsedProfile);
+            }
+            
+            if (savedRole && savedRole !== "null") {
+                console.log('setting role to:', savedRole);
+                setRole(savedRole as "client" | "contractor");
+            }
+        } catch (error) {
+            console.error('Error loading profile from localStorage:', error);
+            // Clear corrupted data
+            localStorage.removeItem("truss_profile");
+            localStorage.removeItem("truss_role");
+        }
+    }, []);
+
+
+
+    // Save profile to localStorage whenever it changes
+    useEffect(() => {
+        console.log('Profile changed, saving to localStorage:', profile);
+        try {
+            if (profile) {
+                localStorage.setItem("truss_profile", JSON.stringify(profile));
+                console.log('Profile saved to localStorage');
+            } else {
+                localStorage.removeItem("truss_profile");
+                console.log('Profile removed from localStorage');
+            }
+        } catch (error) {
+            console.error('Error saving profile to localStorage:', error);
+        }
+    }, [profile]);
+
+    // Save role to localStorage whenever it changes
+    useEffect(() => {
+        console.log('Role changed, saving to localStorage:', role);
+        try {
+            if (role) {
+                localStorage.setItem("truss_role", role);
+                console.log('Role saved to localStorage');
+            } else {
+                localStorage.removeItem("truss_role");
+                console.log('Role removed from localStorage');
+            }
+        } catch (error) {
+            console.error('Error saving role to localStorage:', error);
+        }
+    }, [role]);
+
+
+    const updateProfile = (updates: Partial<Profile>) => {
+        console.log('updateProfile called with:', updates);
+        console.log('current profile:', profile);
+        console.log('current role:', role);
+        
+        if (role === 'client') {
+            setProfile((prev) => {
+                const newProfile = {
+                    // Default values for required fields
+                    id: prev?.id || crypto.randomUUID(),
+                    email: prev?.email || '',
+                    firstName: prev?.firstName || '',
+                    lastName: prev?.lastName || '',
+                    phoneNumber: prev?.phoneNumber || '',
+                    createdAt: prev?.createdAt || new Date().toISOString(),
+                    role: 'client' as const,
+                    preferredContactMethod: (prev as ClientProfile)?.preferredContactMethod || 'email' as const,
+                    clientLocation: (prev as ClientProfile)?.clientLocation || '',
+                    primaryGoal: (prev as ClientProfile)?.primaryGoal || '',
+                    // Apply updates
+                    ...prev,
+                    ...updates,
+                } as ClientProfile;
+                console.log('setting new client profile:', newProfile);
+                return newProfile;
+            });
+        }
+        else if (role === 'contractor') {
+            setProfile((prev) => {
+                const newProfile = {
+                    // Default values for required fields
+                    id: prev?.id || crypto.randomUUID(),
+                    email: prev?.email || '',
+                    firstName: prev?.firstName || '',
+                    lastName: prev?.lastName || '',
+                    phoneNumber: prev?.phoneNumber || '',
+                    createdAt: prev?.createdAt || new Date().toISOString(),
+                    role: 'contractor' as const,
+                    skills: (prev as ContractorProfile)?.skills || [],
+                    hourlyRate: (prev as ContractorProfile)?.hourlyRate || 0,
+                    availability: (prev as ContractorProfile)?.availability || 'project-based' as const,
+                    // Apply updates
+                    ...prev,
+                    ...updates,
+                } as ContractorProfile;
+                console.log('setting new contractor profile:', newProfile);
+                return newProfile;
+            });
+        } else {
+            console.log('No role set, cannot update profile');
+        }
+    }
+
+
+    const clearProfile = () => {
+        setProfile(null);
+        setRole(null);
+        try {
+            localStorage.removeItem("truss_profile");
+            localStorage.removeItem("truss_role");
+        } catch (error) {
+            console.error('Error clearing profile from localStorage:', error);
+        }
+    }
+
+
+
+    
 
     // Sign in with Google
     const signInWithGoogle = async () => {
@@ -126,11 +262,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
 
-    const signInWithApple = async () => {
+    const signInWithX = async () => {
         try {
             setIsLoading(true);
             const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: "apple",
+                provider: "twitter",
                 options: {
                     redirectTo: `${window.location.origin}/auth/callback`,
                 },
@@ -175,13 +311,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const signOut = async () => {
         try {
             await supabase.auth.signOut();
+            // Clear profile data on sign out
+            clearProfile();
         } catch (error) {
             console.error('Sign out error:', error);
         }
     }
 
     return (
-        <AuthContext.Provider value={{ user, profile, setProfile, isLoading, signInError, signUpError, signUpWithEmail, signInWithGoogle, signInWithEmail, signOut, setSignUpError, setSignInError, signInWithApple }}>
+        <AuthContext.Provider value={{ user, profile, role, updateProfile, clearProfile, setRole, isLoading, signInError, signUpError, signUpWithEmail, signInWithGoogle, signInWithEmail, signOut, setSignUpError, setSignInError, signInWithX }}>
             {children}
         </AuthContext.Provider>
     )

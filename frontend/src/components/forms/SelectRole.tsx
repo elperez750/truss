@@ -5,30 +5,30 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
-import { Profile } from "@/types";
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 
 export default function SelectRole() {
-    const [role, setRole] = useState<"client" | "contractor">("client");
     const router = useRouter();
-    const { profile, setProfile } = useAuth();
+    const { profile, updateProfile, setRole, role } = useAuth();
 
 
     useEffect(() => {
         const fetchProfile = async () => {
-        const supabase = await createClient()
+        const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-            setProfile(prev => ({
-                ...prev,
+        if (user) { 
+            updateProfile({
                 email: user.email ?? "",
-                
                 firstName: user.user_metadata?.first_name ?? "",
                 lastName: user.user_metadata?.last_name ?? "",
                 phoneNumber: user.user_metadata?.phone_number ?? "",
-            }));
+            });
+
+
+            setRole(null)
+            console.log(role)
         }
         }
         fetchProfile()
@@ -41,16 +41,16 @@ export default function SelectRole() {
 
 
     const handleContinue = () => {
-        // Handle role selection - you can redirect or call an API here
         try {
-            setProfile((prev: Profile) => ({
-                ...prev,
-                role: role,
-            }));
-    
+            if (role) {
+                updateProfile({
+                    role: role as "client" | "contractor",
+                });
+                setRole(role);
+            }
             console.log("Selected role:", role);
             // Example: redirect to onboarding with role
-            router.push(`/onboarding/${role}`);
+            router.push(`/onboarding/${role}/step1`);
         } catch (error) {
             console.error("Error updating profile:", error);
         }

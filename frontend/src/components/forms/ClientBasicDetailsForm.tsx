@@ -22,8 +22,8 @@ const basicInfoSchema = z.object({
 type BasicInfoFormData = z.infer<typeof basicInfoSchema>;
 
 
-export default function BasicInfoForm() {
-    const { profile, setProfile } = useAuth();
+export default function ClientBasicInfoForm() {
+    const { profile, updateProfile, role } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
     const {
@@ -47,15 +47,16 @@ export default function BasicInfoForm() {
             setIsSubmitting(true);
             
             // Update profile in local state
-            setProfile(prev => ({
-                ...prev,
+            updateProfile({
+                ...profile,
+                role: role as "client" | "contractor",
                 email: data.email,
                 firstName: data.firstName,
                 lastName: data.lastName,
                 phoneNumber: data.phoneNumber,
-            }));
+            });
 
-            router.push("/onboarding/client");
+            router.push("/onboarding/client/step2");
         } catch (error) {
             console.error('Error updating profile:', error);
         } finally {
@@ -64,8 +65,8 @@ export default function BasicInfoForm() {
     };
 
     return (
-        <div className="min-h-screen bg-white">
-            <div className="w-xl mx-auto pt-20 pb-8 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen ">
+            <div className="w-xl mx-auto pb-8 px-4 sm:px-6 lg:px-8">
                 <Card className="w-full max-w-md mx-auto shadow-sm border border-gray-200">
                     <CardHeader className="space-y-3 pb-8">
                         <CardTitle className="text-3xl font-bold text-center text-primary-800">
