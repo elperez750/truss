@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter } from "next/navigation";
+import OnboardingFormButton from "../ui/truss/OnboardingFormButton";
 
 // Form validation schema
 const basicInfoSchema = z.object({
@@ -23,14 +23,13 @@ type BasicInfoFormData = z.infer<typeof basicInfoSchema>;
 
 
 export default function ClientBasicInfoForm() {
-    const { profile, updateProfile, role } = useAuth();
+    const { profile, updateProfile } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
     const {
         register,
         handleSubmit,
-        formState: { errors, isValid },
-        setValue,
+        formState: { errors, isValid }, 
     } = useForm<BasicInfoFormData>({
         resolver: zodResolver(basicInfoSchema),
         mode: "onChange",
@@ -49,7 +48,6 @@ export default function ClientBasicInfoForm() {
             // Update profile in local state
             updateProfile({
                 ...profile,
-                role: role as "client" | "contractor",
                 email: data.email,
                 firstName: data.firstName,
                 lastName: data.lastName,
@@ -157,35 +155,27 @@ export default function ClientBasicInfoForm() {
 
                             {/* Navigation Buttons */}
                             <div className="flex space-x-3 pt-4">
-                                <Button
+                                <OnboardingFormButton
                                         type="button"
+                                        text="Back"
                                         onClick={() => router.push("/onboarding/role")}
-                                        variant="outline"
-                                        size="lg"
-                                        className="flex-1 h-12 text-base font-medium border-gray-300 hover:bg-gray-50"
+                                        isSubmitting={isSubmitting}
                                         disabled={isSubmitting}
-                                    >
-                                        Back
-                                    </Button>
-                                <Button
+                                        className="flex-1 h-12 text-base font-medium border-gray-300 hover:bg-gray-50 cursor-pointer"
+                                    />
+                                <OnboardingFormButton
                                     type="submit"
                                     size="lg"
-                                    className={`flex-1 h-12 text-base font-medium ${
-                                        isValid 
-                                            ? 'bg-primary-600 hover:bg-primary-700 text-white' 
-                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    }`}
                                     disabled={!isValid || isSubmitting}
-                                >
-                                    {isSubmitting ? (
-                                        <div className="flex items-center space-x-2">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                            <span>Saving...</span>
-                                        </div>
-                                    ) : (
-                                        'Next'
-                                    )}
-                                </Button>
+                                    text="Next"
+                                    onClick={() => router.push("/onboarding/client/step2")}
+                                    isSubmitting={isSubmitting}
+                                    className={`flex-1 h-12 text-base font-medium cursor-pointer ${
+                                        isValid
+                                            ? "bg-primary-600 hover:bg-primary-700 text-white"
+                                            : "bg-gray-300 text-gray-500"
+                                    }`}
+                                />
                             </div>
                         </form>
                     </CardContent>

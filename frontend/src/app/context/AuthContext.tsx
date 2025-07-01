@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Listen to auth changes
     useEffect(() => {
-
         // Listen for auth changes, like if the user is logged in or out
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
@@ -90,23 +89,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         console.log('Loading from localStorage...');
         try {
+            // Attempt to load profile and role if they exist
             const savedProfile = localStorage.getItem("truss_profile");
             const savedRole = localStorage.getItem("truss_role");
             
-            console.log('savedProfile from localStorage:', savedProfile);
-            console.log('savedRole from localStorage:', savedRole);
-            
+            // If profile exists, parse it and set it
             if (savedProfile && savedProfile !== "null") {
                 const parsedProfile = JSON.parse(savedProfile);
                 console.log('parsed profile:', parsedProfile);
                 setProfile(parsedProfile);
             }
             
+
+            // If the role exists and it is not null, we can set it to the role
             if (savedRole && savedRole !== "null") {
                 console.log('setting role to:', savedRole);
                 setRole(savedRole as "client" | "contractor");
             }
-        } catch (error) {
+        } catch (error) { 
+            // If we do not have the profile or role, then we have corrupted data
             console.error('Error loading profile from localStorage:', error);
             // Clear corrupted data
             localStorage.removeItem("truss_profile");
@@ -118,14 +119,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Save profile to localStorage whenever it changes
     useEffect(() => {
-        console.log('Profile changed, saving to localStorage:', profile);
+
+
         try {
             if (profile) {
+                // We will save the profile to local storage whenevver it changes. 
+                // This will be if we already have a profile, and we are updating it.
                 localStorage.setItem("truss_profile", JSON.stringify(profile));
-                console.log('Profile saved to localStorage');
             } else {
+                // If we do not have a profile, we will remove it from local storage
                 localStorage.removeItem("truss_profile");
-                console.log('Profile removed from localStorage');
             }
         } catch (error) {
             console.error('Error saving profile to localStorage:', error);
@@ -134,9 +137,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Save role to localStorage whenever it changes
     useEffect(() => {
-        console.log('Role changed, saving to localStorage:', role);
         try {
             if (role) {
+                // If the role exists and it is not null, we can set it to the role
                 localStorage.setItem("truss_role", role);
                 console.log('Role saved to localStorage');
             } else {
@@ -153,49 +156,51 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('updateProfile called with:', updates);
         console.log('current profile:', profile);
         console.log('current role:', role);
+
+
+        const baseProfile: BaseProfile = {
+            id: profile?.id || crypto.randomUUID(),
+            email: profile?.email || '',
+            firstName: profile?.firstName || '',
+            lastName: profile?.lastName || '',
+            phoneNumber: profile?.phoneNumber || '',
+            createdAt: profile?.createdAt || new Date().toISOString(),
+        }
         
         if (role === 'client') {
             setProfile((prev) => {
-                const newProfile = {
+                const newClientProfile = {
                     // Default values for required fields
-                    id: prev?.id || crypto.randomUUID(),
-                    email: prev?.email || '',
-                    firstName: prev?.firstName || '',
-                    lastName: prev?.lastName || '',
-                    phoneNumber: prev?.phoneNumber || '',
-                    createdAt: prev?.createdAt || new Date().toISOString(),
-                    role: 'client' as const,
-                    preferredContactMethod: (prev as ClientProfile)?.preferredContactMethod || 'email' as const,
+                    ...baseProfile,
+
+                    // Client specific fields
+                    preferredContactMethod: (prev as ClientProfile)?.preferredContactMethod || 'email',
                     clientLocation: (prev as ClientProfile)?.clientLocation || '',
                     primaryGoal: (prev as ClientProfile)?.primaryGoal || '',
-                    // Apply updates
-                    ...prev,
+
+                    // Apply updates to the client profile
                     ...updates,
                 } as ClientProfile;
-                console.log('setting new client profile:', newProfile);
-                return newProfile;
+                console.log('setting new client profile:', newClientProfile);
+                return newClientProfile;
             });
         }
         else if (role === 'contractor') {
             setProfile((prev) => {
-                const newProfile = {
+                const newContractorProfile = {
                     // Default values for required fields
-                    id: prev?.id || crypto.randomUUID(),
-                    email: prev?.email || '',
-                    firstName: prev?.firstName || '',
-                    lastName: prev?.lastName || '',
-                    phoneNumber: prev?.phoneNumber || '',
-                    createdAt: prev?.createdAt || new Date().toISOString(),
-                    role: 'contractor' as const,
+                    ...baseProfile,
+
+                    // Contractor specific fields
                     skills: (prev as ContractorProfile)?.skills || [],
                     hourlyRate: (prev as ContractorProfile)?.hourlyRate || 0,
-                    availability: (prev as ContractorProfile)?.availability || 'project-based' as const,
-                    // Apply updates
-                    ...prev,
+                    availability: (prev as ContractorProfile)?.availability || 'project-based',
+
+                    // Apply updates to the contractor profile
                     ...updates,
                 } as ContractorProfile;
-                console.log('setting new contractor profile:', newProfile);
-                return newProfile;
+                console.log('setting new contractor profile:', newContractorProfile);
+                return newContractorProfile;
             });
         } else {
             console.log('No role set, cannot update profile');
@@ -206,6 +211,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const clearProfile = () => {
         setProfile(null);
         setRole(null);
+
+        // Clear the profile and role from localStorage
         try {
             localStorage.removeItem("truss_profile");
             localStorage.removeItem("truss_role");
@@ -238,6 +245,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }
 
+
+    // Sign in with email
     const signInWithEmail = async (email: string, password: string) => {
         try {
             setIsLoading(true);
@@ -262,6 +271,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
 
+    // Sign in with X
     const signInWithX = async () => {
         try {
             setIsLoading(true);
@@ -279,6 +289,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }
 
+
+    // Sign up with email
     const signUpWithEmail = async (email: string, password: string): Promise<boolean> => {
         try {
             setIsLoading(true);
@@ -308,6 +320,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }
 
+    // Sign out
     const signOut = async () => {
         try {
             await supabase.auth.signOut();

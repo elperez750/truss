@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientProfile } from "@/types/profileTypes";
+import OnboardingFormButton from "../ui/truss/OnboardingFormButton";
 
 // Validation schema
 const clientPreferencesFormSchema = z.object({
@@ -30,6 +31,8 @@ export default function ClientPreferencesForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
+
+
   // Initialize form with profile values if present
   const {
     register,
@@ -41,8 +44,7 @@ export default function ClientPreferencesForm() {
     resolver: zodResolver(clientPreferencesFormSchema),
     mode: "onChange",
     defaultValues: {
-      preferredContactMethod:
-        (profile as ClientProfile)?.preferredContactMethod as "email" | "phone" | "text" || "email",
+      preferredContactMethod:(profile as ClientProfile)?.preferredContactMethod as "email" | "phone" | "text" || "email",
       location: (profile as ClientProfile)?.clientLocation || "",
       primaryGoal: (profile as ClientProfile)?.primaryGoal || "",
     },
@@ -55,8 +57,6 @@ export default function ClientPreferencesForm() {
     setIsSubmitting(true);
     try {
       updateProfile({
-        ...profile,
-        role: role as "client" | "contractor",
         preferredContactMethod: data.preferredContactMethod,
         clientLocation: data.location,
         primaryGoal: data.primaryGoal,
@@ -156,24 +156,21 @@ export default function ClientPreferencesForm() {
                 {errors.primaryGoal && (
                   <p className="text-sm text-error-600">{errors.primaryGoal.message}</p>
                 )}
-                {JSON.stringify(profile)}
-                {JSON.stringify(role)}
+                
               </div>
 
               {/* Navigation Buttons */}    
               <div className="flex space-x-3 pt-4">
-                <Button
+                <OnboardingFormButton
                   type="button"
                   onClick={() => router.push("/onboarding/client/step1")}
                   variant="outline"
-                  size="lg"
                   className="flex-1 h-12 text-base font-medium border-gray-300 hover:bg-gray-50 cursor-pointer"
                   disabled={isSubmitting}
-                >
-                  Previous
-                  
-                </Button>
-                <Button
+                  text="Previous"
+                  isSubmitting={isSubmitting}
+                />
+                <OnboardingFormButton
                   type="submit"
                   size="lg"
                   className={`flex-1 h-12 text-base font-medium cursor-pointer ${
@@ -182,16 +179,12 @@ export default function ClientPreferencesForm() {
                       : "bg-gray-300 text-gray-500"
                   }`}
                   disabled={!isValid || isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Saving...</span>
-                    </div>
-                  ) : (
-                    "Next"
-                  )}
-                </Button>
+                  text="Next"
+                  isSubmitting={isSubmitting}
+                  onClick={() => router.push("/onboarding/client/step3")}
+                />
+                
+                
               </div>
             </form>
           </CardContent>
