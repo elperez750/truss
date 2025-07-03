@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "./context/AuthContext";
-
+import { ProfileProvider } from "./context/ProfileContext";
+import Navbar from "@/components/ui/truss/Navbar";
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
@@ -24,8 +25,10 @@ export default function RootLayout({
       <body
         className={` ${plusJakartaSans.className} antialiased bg-white`}
       >
-          <AuthProvider>
+        <AuthProvider>
+          <ProfileProvider>
             {children}
+          </ProfileProvider>
         </AuthProvider>
       </body>
     </html>

@@ -9,6 +9,7 @@ export type BaseProfile = {
 
 
 export type ClientProfile = BaseProfile & {
+    // Step 1
     preferredContactMethod: 'email' | 'phone' | 'text';
     clientLocation: string;
     primaryGoal: string;
@@ -16,12 +17,43 @@ export type ClientProfile = BaseProfile & {
 }
 
 export type ContractorProfile = BaseProfile & {
-    skills: string[];
-    hourlyRate: number;
-    availability: 'full-time' | 'part-time' | 'project-based';
+    //Step 1
+    primaryTrade: string;
+    baseLocation: string
+    serviceArea: string;
+
+
+    //Step 2
+    isLicensed: boolean;
+    licenseNumber?: string;
+    liabilityInsurance: boolean;
+
+
+    //Step 3
+    specialties: string[];
+    yearsExperience: number;
+    emergencyService?: boolean;
+
+
+    //Step 4
+    businessName?: string;
+    hourlyRate?: number;
+    serviceFee?: number;
+    availability?: 'full-time' | 'part-time' | 'project-based';
+
+
+    //This will come after
     portfolio?: string[];
-    yearsExperience?: number;
     certifications?: string[];
+
+
+
+    profilePicture?: string;
+    businessLogoUrl?: string;
+    about?: string;
+
+    isverified?: boolean;
+
 
 }
 

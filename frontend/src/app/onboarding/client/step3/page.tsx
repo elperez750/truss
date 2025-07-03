@@ -1,6 +1,6 @@
 "use client";
 
-import ClientSubmitForm from "@/components/forms/ClientSubmitForm";
+import ClientSubmitForm from "@/components/forms/client/ClientSubmitForm";
 
 export default function ClientStep3() {
     return (

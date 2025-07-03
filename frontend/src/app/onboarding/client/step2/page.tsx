@@ -1,4 +1,4 @@
-import ClientPreferencesForm from "@/components/forms/ClientPreferencesForm";
+import ClientPreferencesForm from "@/components/forms/client/ClientPreferencesForm";
 
 
 export default function ClientStep2() {

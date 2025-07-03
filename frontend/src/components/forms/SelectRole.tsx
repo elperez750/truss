@@ -7,11 +7,12 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useProfile } from "@/app/context/ProfileContext";
 
 
 export default function SelectRole() {
     const router = useRouter();
-    const { profile, updateProfile, setRole, role } = useAuth();
+    const { profile, updateProfile, setRole, role } = useProfile();
 
 
     useEffect(() => {
@@ -27,7 +28,7 @@ export default function SelectRole() {
             });
 
 
-            setRole(null)
+            setRole("client")
             console.log(role)
         }
         }
@@ -43,9 +44,6 @@ export default function SelectRole() {
     const handleContinue = () => {
         try {
             if (role) {
-                updateProfile({
-                    role: role as "client" | "contractor",
-                });
                 setRole(role);
             }
             console.log("Selected role:", role);

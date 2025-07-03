@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/Button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientProfile } from "@/types/profileTypes";
-import OnboardingFormButton from "../ui/truss/OnboardingFormButton";
+import OnboardingFormButton from "../../ui/truss/OnboardingFormButton";
+import { useProfile } from "@/app/context/ProfileContext";
 
 // Validation schema
 const clientPreferencesFormSchema = z.object({
@@ -27,7 +28,8 @@ const clientPreferencesFormSchema = z.object({
 type ClientPreferencesFormData = z.infer<typeof clientPreferencesFormSchema>;
 
 export default function ClientPreferencesForm() {
-  const { profile, updateProfile, role } = useAuth();
+  const { profile, updateProfile, role } = useProfile();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 

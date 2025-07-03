@@ -1,4 +1,4 @@
-import ClientBasicInfoForm from "@/components/forms/ClientBasicDetailsForm";
+import ClientBasicInfoForm from "@/components/forms/client/ClientBasicDetailsForm";
 
 
 export default function ClientStep1() {

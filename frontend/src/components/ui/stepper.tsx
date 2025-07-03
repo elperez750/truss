@@ -64,9 +64,9 @@ interface StepperProps {
 
 export function Stepper({ steps, currentStep, onStepChange }: StepperProps) {
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-8">
+    <div className="w-full max-w-6xl mx-auto px-4 py-8 overflow-x-auto">
       {/* Progress Bar Background */}
-      <div className="relative mb-12">
+      <div className="relative mb-12 min-w-[800px]">
         {/* Background Line */}
         <div className="absolute top-6 left-0 right-0 h-1 bg-neutral-200 rounded-full" />
         
@@ -79,16 +79,18 @@ export function Stepper({ steps, currentStep, onStepChange }: StepperProps) {
         />
         
         {/* Steps */}
-        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4">
+        <div className="relative flex justify-between items-start">
           {steps.map((step, index) => (
-            <Step
-              key={step.title}
-              title={step.title}
-              description={step.description}
-              isCompleted={index < currentStep}
-              isActive={index === currentStep}
-              stepNumber={index + 1}
-            />
+            <div key={index} className="flex-1 min-w-[160px] px-2">
+              <Step
+                key={step.title}
+                title={step.title}
+                description={step.description}
+                isCompleted={index < currentStep}
+                isActive={index === currentStep}
+                stepNumber={index + 1}
+              />
+            </div>
           ))}
         </div>
       </div>

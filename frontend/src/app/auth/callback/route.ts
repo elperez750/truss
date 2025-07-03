@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 
-
+// This is the code that is used to handle the callback from the auth provider
 export async function GET(request: Request) {
 
 

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter } from "next/navigation";
-import OnboardingFormButton from "../ui/truss/OnboardingFormButton";
+import OnboardingFormButton from "../../ui/truss/OnboardingFormButton";
 
 // Form validation schema
 const basicInfoSchema = z.object({

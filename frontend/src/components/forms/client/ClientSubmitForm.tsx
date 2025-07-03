@@ -3,7 +3,7 @@ import { ClientProfile } from "@/types/profileTypes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import OnboardingFormButton from "../ui/truss/OnboardingFormButton";
+import OnboardingFormButton from "../../ui/truss/OnboardingFormButton";
 
 export default function ClientSubmitForm() {
     const { profile, role } = useAuth();
