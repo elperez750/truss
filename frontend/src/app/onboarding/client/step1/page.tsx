@@ -1,10 +1,10 @@
-import ClientBasicInfoForm from "@/components/forms/client/ClientBasicDetailsForm";
+import ClientPreferencesForm from "@/components/forms/client/ClientPreferencesForm";
 
 
 export default function ClientStep1() {
     return (
         <div>
-            <ClientBasicInfoForm  />
+            <ClientPreferencesForm  />
         </div>
     )
 

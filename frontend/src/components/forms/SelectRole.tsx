@@ -15,28 +15,7 @@ export default function SelectRole() {
     const { profile, updateProfile, setRole, role } = useProfile();
 
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) { 
-            updateProfile({
-                email: user.email ?? "",
-                firstName: user.user_metadata?.first_name ?? "",
-                lastName: user.user_metadata?.last_name ?? "",
-                phoneNumber: user.user_metadata?.phone_number ?? "",
-            });
-
-
-            setRole("client")
-            console.log(role)
-        }
-        }
-        fetchProfile()
-    }, [])
-
-
-
+    
 
 
 

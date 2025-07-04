@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,9 @@ import OnboardingFormButton from "@/components/ui/truss/OnboardingFormButton";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { useProfile } from "@/app/context/ProfileContext";
+import { ContractorProfile } from "@/types/profileTypes";
+import { useRef } from "react";
+
 
 // Mock data for trades and travel distances
 const trades = [
@@ -45,26 +48,87 @@ type FormData = z.infer<typeof formSchema>;
 export default function TradeServiceAreaForm() {
     const router = useRouter();
     const { updateProfile, profile } = useProfile();
-    const { user } = useAuth();
+    const { user, isLoading } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <p>Loading authentication...</p>
+            </div>
+        );
+    }
 
-    // This code sets up React Hook Form for managing form state and validation
+    console.log("=== TradeServiceAreaForm Debug Info ===");
+    console.log("Auth state:", { user, isLoading });
+    console.log("User ID:", user?.id);
+    console.log("User email:", user?.email);
+    console.log("User metadata:", user?.user_metadata);
+    console.log("Profile state:", profile);
+    console.log("==========================================");
+
+    if (!user) {
+        return (
+            <div className="flex flex-col justify-center items-center h-screen space-y-4">
+                <p className="text-red-600">No user found - Debug Info:</p>
+                <div className="bg-gray-100 p-4 rounded">
+                    <p>Auth Loading: {isLoading ? 'Yes' : 'No'}</p>
+                    <p>User: {user ? 'Present' : 'Null'}</p>
+                    <p>Profile: {profile ? 'Present' : 'Null'}</p>
+                </div>
+                <button 
+                    onClick={() => router.push('/authenticate')}
+                    className="px-4 py-2 bg-blue-500 text-white rounded"
+                >
+                    Go to Authentication
+                </button>
+            </div>
+        );
+    }
+
     const {
-        control,        // Used to control form inputs (especially for custom components like Select)
-        handleSubmit,   // Function that handles form submission and validation
-        formState: { errors, isValid }, // Destructured form state for error handling and validation status
+        control,
+        handleSubmit,
+        formState: { errors, isValid },
+        watch,
+        reset,
     } = useForm<FormData>({
-        resolver: zodResolver(formSchema), // Uses Zod schema for form validation
-        mode: "onChange",                  // Validates form fields as user types (real-time validation)
-        defaultValues: {                   // Initial values for form fields
-            primaryTrade: "",
-            baseLocation: "",
-            travelDistance: "",
+        resolver: zodResolver(formSchema),
+        mode: "onChange",
+        defaultValues: {
+            primaryTrade: (profile as ContractorProfile)?.primaryTrade ?? "",
+            baseLocation: (profile as ContractorProfile)?.baseLocation ?? "",
+            travelDistance: (profile as ContractorProfile)?.serviceArea ?? "",
         },  
 
     });
 
+    const watchedValues = watch();
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (!watchedValues) return;
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            updateProfile({
+                primaryTrade: watchedValues.primaryTrade,
+                baseLocation: watchedValues.baseLocation,
+                serviceArea: watchedValues.travelDistance,
+            });
+        }, 600);
+        // eslint-disable-next-line
+    }, [watchedValues.primaryTrade, watchedValues.baseLocation, watchedValues.travelDistance]);
+
+    useEffect(() => {
+        if (profile) {
+            reset({
+                primaryTrade: (profile as ContractorProfile).primaryTrade,
+                baseLocation: (profile as ContractorProfile).baseLocation,
+                travelDistance: (profile as ContractorProfile).serviceArea,
+            });
+        }
+    }, [profile, reset]);
+  
     const onSubmit = (data: FormData) => {
         setIsSubmitting(true);
         console.log("Form Data:", data);
@@ -74,11 +138,8 @@ export default function TradeServiceAreaForm() {
             serviceArea: data.travelDistance,
         });
         
-        // Simulate API call
         setTimeout(() => {
             setIsSubmitting(false);
-            // Navigate to the next step
-            // router.push("/onboarding/contractor/step3");
         }, 1000);
     };
 
@@ -101,8 +162,8 @@ export default function TradeServiceAreaForm() {
                             name="primaryTrade"
                             control={control}
                             render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <SelectTrigger id="primaryTrade" className="h-12 text-base">
+                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                    <SelectTrigger id="primaryTrade" className="h-12 text-base w-full">
                                         <SelectValue placeholder="Select your main trade..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -143,8 +204,8 @@ export default function TradeServiceAreaForm() {
                             name="travelDistance"
                             control={control}
                             render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <SelectTrigger>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}  >
+                                    <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select your travel distances..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -156,11 +217,6 @@ export default function TradeServiceAreaForm() {
                             )}
                         />
                     </div>
-
-
-                   
-
-                   
 
                     {/* Navigation Buttons */}
                     <div className="flex space-x-3 pt-6 border-t border-gray-200">

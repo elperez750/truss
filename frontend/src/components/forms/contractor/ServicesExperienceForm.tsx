@@ -62,6 +62,8 @@ export default function ServicesExperienceForm() {
         }
     };
 
+    
+
     const handleRemoveSpecialty = (specToRemove: string) => {
         setValue("specialties", specialties.filter(spec => spec !== specToRemove), { shouldValidate: true });
     };

@@ -87,7 +87,7 @@ export default function BusinessDetailsForm() {
                             name="businessName"
                             control={control}
                             render={({ field }) => <Input id="businessName" placeholder="e.g., John Doe Carpentry" className="h-12 text-base" {...field} />}
-                        />
+                        />                                                                      
                     </div>
                     
                     {/* Rates */}
@@ -164,7 +164,7 @@ export default function BusinessDetailsForm() {
                             disabled={!isValid || isSubmitting}
                             text={isSubmitting ? "Saving..." : "Review Profile"}
                             isSubmitting={isSubmitting}
-                            onClick={() => {}}
+                            onClick={() => router.push('/onboarding/contractor/step5')}
                         />
                     </div>
                 </form>

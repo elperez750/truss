@@ -3,13 +3,14 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { ClientProfile, ContractorProfile, Profile, BaseProfile } from "@/types/profileTypes"; 
+import { getLS, setLS, removeLS } from "@/lib/utils";
 
 type ProfileContextType = {
     profile: Profile | null,
-    role: "client" | "contractor",
+    role: "client" | "contractor" | null,
     updateProfile: (updates: Partial<Profile>) => void,
     clearProfile: () => void,
-    setRole: (role: "client" | "contractor") => void,
+    setRole: (role: "client" | "contractor" | null) => void,
 }
 
 export const ProfileContext = createContext<ProfileContextType>({
@@ -21,25 +22,25 @@ export const ProfileContext = createContext<ProfileContextType>({
 });
 
 export const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
-    const { user, signOut } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const [profile, setProfile] = useState<Profile | null>(null);
-    const [role, setRole] = useState<"client" | "contractor">("client");
+    const [role, setRole] = useState<"client" | "contractor" | null>("client");
 
-    // Clear profile on sign out
-    useEffect(() => {
-        if (!user) {
-            clearProfile();
-        }
-    }, [user]);
+    // // Clear profile on sign out
+    // useEffect(() => {
+    //     if (!user) {
+    //         clearProfile();
+    //     }
+    // }, [user]);
 
     // Load profile from localStorage on initial render
     useEffect(() => {
         try {
-            const savedProfile = localStorage.getItem("truss_profile");
-            const savedRole = localStorage.getItem("truss_role");
+            const savedProfile = getLS("truss_profile", null);
+            const savedRole = getLS("truss_role", null);
             
             if (savedProfile && savedProfile !== "null") {
-                setProfile(JSON.parse(savedProfile));
+                setProfile(savedProfile);
             }
             
             if (savedRole && savedRole !== "null") {
@@ -47,18 +48,24 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
             }
         } catch (error) { 
             console.error('Error loading profile from localStorage:', error);
-            localStorage.removeItem("truss_profile");
-            localStorage.removeItem("truss_role");
+            removeLS("truss_profile");
+            removeLS("truss_role");
         }
     }, []);
+
+    // Debug logging to help troubleshoot
+    useEffect(() => {
+        console.log("ProfileProvider - Auth state:", { user, authLoading });
+        console.log("ProfileProvider - Profile state:", { profile, role });
+    }, [user, authLoading, profile, role]);
 
     // Save profile to localStorage whenever it changes
     useEffect(() => {
         try {
             if (profile) {
-                localStorage.setItem("truss_profile", JSON.stringify(profile));
+                setLS("truss_profile", profile);
             } else {
-                localStorage.removeItem("truss_profile");
+                removeLS("truss_profile");
             }
         } catch (error) {
             console.error('Error saving profile to localStorage:', error);
@@ -69,9 +76,9 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
     useEffect(() => {
         try {
             if (role) {
-                localStorage.setItem("truss_role", role);
+                setLS("truss_role", role);
             } else {
-                localStorage.removeItem("truss_role");
+                removeLS("truss_role");
             }
         } catch (error) {
             console.error('Error saving role to localStorage:', error);
@@ -79,6 +86,10 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
     }, [role]);
 
     const updateProfile = (updates: Partial<Profile>) => {
+        console.log("updateProfile called with:", updates);
+        console.log("Current user:", user);
+        console.log("Current profile:", profile);
+        
         const baseProfile: BaseProfile = {
             id: profile?.id || user?.id || crypto.randomUUID(),
             email: profile?.email || user?.email || '',
@@ -87,7 +98,12 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
             phoneNumber: profile?.phoneNumber || user?.user_metadata?.phone_number || '',
             createdAt: profile?.createdAt || new Date().toISOString(),
         }
-        
+
+        if (!role || (role !== 'client' && role !== 'contractor')) {
+            setProfile(baseProfile as Profile);
+            return
+        }   
+
         if (role === 'client') {
             setProfile((prev) => ({
                 ...baseProfile,
@@ -117,8 +133,8 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
         setProfile(null);
         setRole("client");
         try {
-            localStorage.removeItem("truss_profile");
-            localStorage.removeItem("truss_role");
+            removeLS("truss_profile");
+            removeLS("truss_role");
         } catch (error) {
             console.error('Error clearing profile from localStorage:', error);
         }

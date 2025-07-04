@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/app/context/AuthContext";
 import { useRouter } from "next/navigation";
-import OnboardingFormButton from "../../ui/truss/OnboardingFormButton";
+import OnboardingFormButton from "../ui/truss/OnboardingFormButton";
+import { useProfile } from "@/app/context/ProfileContext";
+import { useAuth } from "@/app/context/AuthContext";
+
 
 // Form validation schema
 const basicInfoSchema = z.object({
@@ -22,24 +24,53 @@ const basicInfoSchema = z.object({
 type BasicInfoFormData = z.infer<typeof basicInfoSchema>;
 
 
-export default function ClientBasicInfoForm() {
-    const { profile, updateProfile } = useAuth();
+export default function ProfileBasicInformation() {
+    const { profile, updateProfile, setRole, role } = useProfile();
+    const { user, getUser } = useAuth();
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
     const {
         register,
         handleSubmit,
-        formState: { errors, isValid }, 
+        formState: { errors, isValid },
+        reset,
     } = useForm<BasicInfoFormData>({
         resolver: zodResolver(basicInfoSchema),
         mode: "onChange",
         defaultValues: {
-            email: profile?.email || "",
-            firstName: profile?.firstName || "",
-            lastName: profile?.lastName || "",
-            phoneNumber: profile?.phoneNumber || "",
+            email: user?.email || "",
+            firstName: "",
+            lastName: "",
+            phoneNumber: "",
         },
     });
+
+
+
+    
+    useEffect(() => {
+        const fetchProfile = async () => {
+        const userData = await getUser()
+        console.log("userData", userData)
+        if (userData) { 
+            updateProfile({
+                email: userData.email ?? "",
+                firstName: userData.user_metadata?.first_name ?? "",
+                lastName: userData.user_metadata?.last_name ?? "",
+                phoneNumber: userData.user_metadata?.phone_number ?? "",
+            });
+
+
+            setRole("client")
+            console.log("role", role)
+        }
+        }
+        fetchProfile()
+    }, [])
+
+
+
 
     const onSubmit = (data: BasicInfoFormData) => {
         try {
@@ -47,14 +78,13 @@ export default function ClientBasicInfoForm() {
             
             // Update profile in local state
             updateProfile({
-                ...profile,
                 email: data.email,
                 firstName: data.firstName,
                 lastName: data.lastName,
                 phoneNumber: data.phoneNumber,
             });
 
-            router.push("/onboarding/client/step2");
+            router.push("/onboarding/role/");
         } catch (error) {
             console.error('Error updating profile:', error);
         } finally {
@@ -71,7 +101,7 @@ export default function ClientBasicInfoForm() {
                             Basic Information
                         </CardTitle>
                         <CardDescription className="text-center text-gray-600">
-                            Tell us a bit about yourself
+                            We need to know a bit about you to get started
                         </CardDescription>
                     </CardHeader>
                     
@@ -168,7 +198,7 @@ export default function ClientBasicInfoForm() {
                                     size="lg"
                                     disabled={!isValid || isSubmitting}
                                     text="Next"
-                                    onClick={() => router.push("/onboarding/client/step2")}
+                                    onClick={() => router.push("/onboarding/role")}
                                     isSubmitting={isSubmitting}
                                     className={`flex-1 h-12 text-base font-medium cursor-pointer ${
                                         isValid
