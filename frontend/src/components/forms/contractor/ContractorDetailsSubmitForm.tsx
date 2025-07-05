@@ -30,7 +30,7 @@ const submitFormSchema = z.object({
 
     // Step 3
     specialties: z.array(z.string()),
-    yearsExperience: z.number(),
+    yearsExperience: z.string(),
     emergencyService: z.boolean().optional(),
 
     // Step 4
@@ -160,7 +160,7 @@ export default function ContractorDetailsSubmitForm() {
                                     type="submit"
                                     size="lg"
                                     disabled={isSubmitting}
-                                    text={isSubmitting ? "Submitting..." : "Submit Application"}
+                                    text={isSubmitting ? "Submitting..." : "Submit Profile"}
                                     isSubmitting={isSubmitting}
                                     onClick={() => {}}
                                     className="flex-1 h-12 text-base font-medium bg-primary-600 hover:bg-primary-700 text-white cursor-pointer"

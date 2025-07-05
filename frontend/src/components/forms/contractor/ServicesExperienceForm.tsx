@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,27 +13,28 @@ import { useRouter } from "next/navigation";
 import { useProfile } from "@/app/context/ProfileContext";
 import { XIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ContractorProfile } from "@/types/profileTypes";
 
 // Form validation schema
 const formSchema = z.object({
     specialties: z.array(z.string()).min(1, "Please add at least one specialty."),
-    yearsExperience: z.string().min(1, "Please select your years of experience."),
+    yearsExperience: z.string(),
     emergencyService: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 const experienceLevels = [
-    { value: "0", label: "Less than 1 year" },
-    { value: "1", label: "1-2 years" },
-    { value: "3", label: "3-5 years" },
-    { value: "6", label: "6-10 years" },
-    { value: "10", label: "10+ years" },
+    "less than 1 year",
+    "1-2 years",
+    "3-5 years",
+    "6-10 years",
+    "10+ years",
 ];
 
 export default function ServicesExperienceForm() {
     const router = useRouter();
-    const { updateProfile } = useProfile();
+    const { updateProfile, profile } = useProfile();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [specialtyInput, setSpecialtyInput] = useState("");
 
@@ -42,14 +43,15 @@ export default function ServicesExperienceForm() {
         handleSubmit,
         setValue,
         watch,
+        reset,
         formState: { errors, isValid },
     } = useForm<FormData>({
         resolver: zodResolver(formSchema),
         mode: "onChange",
         defaultValues: {
-            specialties: [],
-            yearsExperience: "",
-            emergencyService: false,
+            specialties: (profile as ContractorProfile)?.specialties || [],
+            yearsExperience: (profile as ContractorProfile)?.yearsExperience?.toString() || "less than 1 year",
+            emergencyService: (profile as ContractorProfile)?.emergencyService || false,
         },
     });
 
@@ -62,7 +64,18 @@ export default function ServicesExperienceForm() {
         }
     };
 
-    
+    // Load form data from profile context when it changes
+    useEffect(() => {
+        if (profile) {
+            const contractorProfile = profile as ContractorProfile;
+           
+            reset({
+                specialties: contractorProfile.specialties || [],
+                yearsExperience: contractorProfile.yearsExperience || "",
+                emergencyService: contractorProfile.emergencyService || false,
+            });
+        }
+    }, [profile, reset]);
 
     const handleRemoveSpecialty = (specToRemove: string) => {
         setValue("specialties", specialties.filter(spec => spec !== specToRemove), { shouldValidate: true });
@@ -77,16 +90,17 @@ export default function ServicesExperienceForm() {
     
     const onSubmit = (data: FormData) => {
         setIsSubmitting(true);
-        console.log("Form Data:", data);
+        console.log("📤 Submitting form data:", data);
+        
         updateProfile({
             specialties: data.specialties,
-            yearsExperience: parseInt(data.yearsExperience),
+            yearsExperience: data.yearsExperience,
             emergencyService: data.emergencyService,
         });
         
         setTimeout(() => {
             setIsSubmitting(false);
-            // router.push("/onboarding/contractor/step4");
+            router.push("/onboarding/contractor/step4");
         }, 1000);
     };
 
@@ -138,14 +152,14 @@ export default function ServicesExperienceForm() {
                             name="yearsExperience"
                             control={control}
                             render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                     <SelectTrigger id="yearsExperience" className="h-12 text-base">
                                         <SelectValue placeholder="Select your experience level..." />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {experienceLevels.map((level) => (
-                                            <SelectItem key={level.value} value={level.value}>
-                                                {level.label}
+                                            <SelectItem key={level} value={level}>
+                                                {level}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -180,7 +194,7 @@ export default function ServicesExperienceForm() {
                             type="button"
                             onClick={() => router.back()}
                             variant="outline"
-                            className="flex-1 h-12 text-base font-medium"
+                            className="flex-1 h-12 text-base font-medium cursor-pointer"
                             text="Back"
                             isSubmitting={isSubmitting}
                             disabled={isSubmitting}
@@ -188,11 +202,11 @@ export default function ServicesExperienceForm() {
                         <OnboardingFormButton
                             type="submit"
                             size="lg"
-                            className={`flex-1 h-12 text-base font-medium ${isValid ? 'bg-primary-600 hover:bg-primary-700 text-white' : 'bg-gray-300 text-gray-500'}`}
+                            className={`flex-1 h-12 text-base font-medium cursor-pointer ${isValid ? 'bg-primary-600 hover:bg-primary-700 text-white' : 'bg-gray-300 text-gray-500'}`}
                             disabled={!isValid || isSubmitting}
                             text={isSubmitting ? "Saving..." : "Next"}
                             isSubmitting={isSubmitting}
-                            onClick={() => {router.push("/onboarding/contractor/step4")}}
+                            onClick={() => {}}
                         />
                     </div>
                 </form>

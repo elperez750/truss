@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,9 +12,8 @@ import OnboardingFormButton from "@/components/ui/truss/OnboardingFormButton";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/app/context/ProfileContext";
 import { AnimatePresence, motion } from "framer-motion";
-// To install framer-motion: npm install framer-motion
-// To install sonner (for toast notifications): npm install sonner
-// To install @radix-ui/react-switch (if not already installed): npm install @radix-ui/react-switch
+import { ContractorProfile } from "@/types/profileTypes";
+
 
 
 // Form validation schema
@@ -33,6 +32,9 @@ const formSchema = z.object({
     path: ["licenseNumber"],
 });
 
+
+
+// The form data will be of type FormSchema
 type FormData = z.infer<typeof formSchema>;
 
 export default function LicenseInsuranceForm() {
@@ -40,23 +42,44 @@ export default function LicenseInsuranceForm() {
     const { updateProfile, profile } = useProfile();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+
+    // This is the useEffect that will be used to set the form data
+    useEffect(() => {
+        if (profile) {
+            const profileData =  profile as ContractorProfile;
+            setValue("isLicensed", profileData.isLicensed);
+            setValue("licenseNumber", profileData.licenseNumber);
+            setValue("liabilityInsurance", profileData.liabilityInsurance);
+        }
+    }, [profile])
+
+
+    // This is the form data that will be used to display the form
     const {
         control,
         handleSubmit,
         watch,
+        setValue,
         formState: { errors, isValid },
     } = useForm<FormData>({
         resolver: zodResolver(formSchema),
         mode: "onChange",
         defaultValues: {
-            isLicensed: false,
-            licenseNumber: "",
-            liabilityInsurance: false,
+            isLicensed: (profile as ContractorProfile)?.isLicensed || false,
+            licenseNumber: (profile as ContractorProfile)?.licenseNumber || "",
+            liabilityInsurance: (profile as ContractorProfile)?.liabilityInsurance || false,
         },
     });
 
+
+
+    // This is the watch function that will be used to watch the form data
     const isLicensed = watch("isLicensed");
 
+
+   
+
+    // This is the onSubmit function that will be used to submit the form data
     const onSubmit = (data: FormData) => {
         setIsSubmitting(true);
         console.log("Form Data:", data);
@@ -69,7 +92,7 @@ export default function LicenseInsuranceForm() {
         setTimeout(() => {
             setIsSubmitting(false);
             // Navigate to the next step
-            // router.push("/onboarding/contractor/step3");
+            router.push("/onboarding/contractor/step3");
         }, 1000);
     };
 
@@ -159,7 +182,7 @@ export default function LicenseInsuranceForm() {
                             type="button"
                             onClick={() => router.back()}
                             variant="outline"
-                            className="flex-1 h-12 text-base font-medium"
+                            className="flex-1 h-12 text-base font-medium cursor-pointer"
                             text="Back"
                             isSubmitting={isSubmitting}
                             disabled={isSubmitting}
@@ -167,7 +190,7 @@ export default function LicenseInsuranceForm() {
                         <OnboardingFormButton
                             type="submit"
                             size="lg"
-                            className={`flex-1 h-12 text-base font-medium ${isValid ? 'bg-primary-600 hover:bg-primary-700 text-white' : 'bg-gray-300 text-gray-500'}`}
+                            className={`flex-1 h-12 text-base font-medium cursor-pointer ${isValid ? 'bg-primary-600 hover:bg-primary-700 text-white' : 'bg-gray-300 text-gray-500'}`}
                             disabled={!isValid || isSubmitting}
                             text={isSubmitting ? "Saving..." : "Next"}
                             isSubmitting={isSubmitting}

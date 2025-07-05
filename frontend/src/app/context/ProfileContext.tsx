@@ -3,8 +3,11 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { ClientProfile, ContractorProfile, Profile, BaseProfile } from "@/types/profileTypes"; 
-import { getLS, setLS, removeLS } from "@/lib/utils";
+import { removeLS, setLS, getLS } from "@/lib/utils";
 
+
+
+// Creating the profile context type
 type ProfileContextType = {
     profile: Profile | null,
     role: "client" | "contractor" | null,
@@ -14,82 +17,80 @@ type ProfileContextType = {
 }
 
 export const ProfileContext = createContext<ProfileContextType>({
-    profile: null,
-    role: "client",
-    updateProfile: () => {},
-    clearProfile: () => {},
-    setRole: () => {},
+    profile: null, // The profile data will start as null
+    role: "client", // The default role will be the client  
+    updateProfile: () => {}, // The updateProfile function will be empty
+    clearProfile: () => {}, // The clearProfile function will be empty
+    setRole: () => {}, // The setRole function will be empty
 });
 
+
+
 export const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
-    const { user, isLoading: authLoading } = useAuth();
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [role, setRole] = useState<"client" | "contractor" | null>("client");
+    const { user, isLoading } = useAuth();  //We will get the logged in user from the auth context
+    const [profile, setProfile] = useState<Profile | null>(null); // Here we will set the profile data to null
+    const [role, setRole] = useState<"client" | "contractor" | null>("client"); // Here we will set the role to an empty string
+    const [isInitialized, setIsInitialized] = useState(false);
 
-    // // Clear profile on sign out
-    // useEffect(() => {
-    //     if (!user) {
-    //         clearProfile();
-    //     }
-    // }, [user]);
-
-    // Load profile from localStorage on initial render
+    // Load profile and role from localStorage on mount
     useEffect(() => {
+        if (isLoading) return;  
+
         try {
-            const savedProfile = getLS("truss_profile", null);
-            const savedRole = getLS("truss_role", null);
-            
-            if (savedProfile && savedProfile !== "null") {
-                setProfile(savedProfile);
-            }
-            
-            if (savedRole && savedRole !== "null") {
-                setRole(savedRole as "client" | "contractor");
-            }
-        } catch (error) { 
-            console.error('Error loading profile from localStorage:', error);
-            removeLS("truss_profile");
-            removeLS("truss_role");
-        }
-    }, []);
+            const savedProfile = getLS("truss_profile", "");
+            const savedRole = getLS("truss_role", "");
 
-    // Debug logging to help troubleshoot
-    useEffect(() => {
-        console.log("ProfileProvider - Auth state:", { user, authLoading });
-        console.log("ProfileProvider - Profile state:", { profile, role });
-    }, [user, authLoading, profile, role]);
+            if (savedProfile) {
+                const parsedProfile = JSON.parse(savedProfile);
+                setProfile(parsedProfile);  
+            }
+
+            if (savedRole && (savedRole === "client" || savedRole === "contractor")) {
+                setRole(savedRole);
+            } else {
+                setRole("client"); // Default fallback
+            }
+        } catch (error) {
+            console.error('Error loading profile from localStorage:', error);
+            setRole("client"); // Default fallback
+        } finally {
+            setIsInitialized(true);
+        }
+        }, [isLoading]);
 
     // Save profile to localStorage whenever it changes
     useEffect(() => {
-        try {
-            if (profile) {
-                setLS("truss_profile", profile);
-            } else {
-                removeLS("truss_profile");
+        if (!isInitialized) return;
+        
+        if (profile) {
+            try {
+                setLS("truss_profile", JSON.stringify(profile));
+            } catch (error) {
+                console.error('Error saving profile to localStorage:', error);
             }
-        } catch (error) {
-            console.error('Error saving profile to localStorage:', error);
         }
-    }, [profile]);
+    }, [profile, isInitialized]);
 
+    
     // Save role to localStorage whenever it changes
     useEffect(() => {
-        try {
-            if (role) {
+        if (!isInitialized) return;
+        
+        if (role) {
+            try {
                 setLS("truss_role", role);
-            } else {
-                removeLS("truss_role");
+            } catch (error) {
+                console.error('Error saving role to localStorage:', error);
             }
-        } catch (error) {
-            console.error('Error saving role to localStorage:', error);
         }
-    }, [role]);
+    }, [role, isInitialized]);
 
     const updateProfile = (updates: Partial<Profile>) => {
         console.log("updateProfile called with:", updates);
         console.log("Current user:", user);
         console.log("Current profile:", profile);
         
+        // Always preserve existing base profile data first
         const baseProfile: BaseProfile = {
             id: profile?.id || user?.id || crypto.randomUUID(),
             email: profile?.email || user?.email || '',
@@ -100,37 +101,56 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
         }
 
         if (!role || (role !== 'client' && role !== 'contractor')) {
-            setProfile(baseProfile as Profile);
-            return
+            const updatedProfile = {
+                ...baseProfile,
+                ...updates,
+            } as Profile;
+            setProfile(updatedProfile);
+            return;
         }   
 
         if (role === 'client') {
-            setProfile((prev) => ({
+            const currentClientProfile = profile as ClientProfile;
+            const updatedProfile = {
                 ...baseProfile,
-                preferredContactMethod: (prev as ClientProfile)?.preferredContactMethod || 'email',
-                clientLocation: (prev as ClientProfile)?.clientLocation || '',
-                primaryGoal: (prev as ClientProfile)?.primaryGoal || '',
+                // Preserve existing client-specific fields
+                preferredContactMethod: currentClientProfile?.preferredContactMethod || 'email',
+                clientLocation: currentClientProfile?.clientLocation || '',
+                primaryGoal: currentClientProfile?.primaryGoal || '',
+                // Apply updates (this can override the preserved fields)
                 ...updates,
-            } as ClientProfile));
+            } as ClientProfile;
+
+            setProfile(updatedProfile);
         } else if (role === 'contractor') {
-            setProfile((prev) => ({
+            const currentContractorProfile = profile as ContractorProfile;
+            const updatedProfile = {
                 ...baseProfile,
-                primaryTrade: (prev as ContractorProfile)?.primaryTrade || '',
-                baseLocation: (prev as ContractorProfile)?.baseLocation || '',
-                serviceArea: (prev as ContractorProfile)?.serviceArea || '',
-                businessName: (prev as ContractorProfile)?.businessName || '',
-                isLicensed: (prev as ContractorProfile)?.isLicensed || false,
-                licenseNumber: (prev as ContractorProfile)?.licenseNumber || '',
-                liabilityInsurance: (prev as ContractorProfile)?.liabilityInsurance || false,
-                specialties: (prev as ContractorProfile)?.specialties || [],
-                yearsExperience: (prev as ContractorProfile)?.yearsExperience || 0,
+                // Preserve existing contractor-specific fields
+                primaryTrade: currentContractorProfile?.primaryTrade || '',
+                baseLocation: currentContractorProfile?.baseLocation || '',
+                serviceArea: currentContractorProfile?.serviceArea || '',
+                businessName: currentContractorProfile?.businessName || '',
+                isLicensed: currentContractorProfile?.isLicensed || false,
+                licenseNumber: currentContractorProfile?.licenseNumber || '',
+                liabilityInsurance: currentContractorProfile?.liabilityInsurance || false,
+                specialties: currentContractorProfile?.specialties || [],
+                yearsExperience: currentContractorProfile?.yearsExperience || 'less than 1 year',
+                emergencyService: currentContractorProfile?.emergencyService || false,
+                hourlyRate: currentContractorProfile?.hourlyRate,
+                serviceFee: currentContractorProfile?.serviceFee,
+                availability: currentContractorProfile?.availability,
+                // Apply updates (this can override the preserved fields)
                 ...updates,
-            } as ContractorProfile));
+            } as ContractorProfile;
+
+            setProfile(updatedProfile);
         }
     }
 
     const clearProfile = () => {
-        setProfile(null);
+        if (role === null) return;
+
         setRole("client");
         try {
             removeLS("truss_profile");
@@ -140,8 +160,18 @@ export const ProfileProvider = ({ children }: { children: React.ReactNode }) => 
         }
     }
 
+    const handleSetRole = (newRole: "client" | "contractor" | null) => {
+        setRole(newRole);
+    }
+
     return (
-        <ProfileContext.Provider value={{ profile, role, updateProfile, clearProfile, setRole }}>
+        <ProfileContext.Provider value={{ 
+            profile, 
+            role, 
+            updateProfile, 
+            clearProfile, 
+            setRole: handleSetRole 
+        }}>
             {children}
         </ProfileContext.Provider>
     )

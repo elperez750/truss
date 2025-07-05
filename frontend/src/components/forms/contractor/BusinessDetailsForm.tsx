@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import OnboardingFormButton from "@/components/ui/truss/OnboardingFormButton";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/app/context/ProfileContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ContractorProfile } from "@/types/profileTypes";
 
 // Form validation schema
 const formSchema = z.object({
@@ -32,13 +33,14 @@ const availabilityOptions = [
 
 export default function BusinessDetailsForm() {
     const router = useRouter();
-    const { updateProfile } = useProfile();
+    const { updateProfile, profile } = useProfile();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const {
         control,
         handleSubmit,
-        formState: { errors, isValid },
+        reset,
+            formState: { errors, isValid },
     } = useForm<FormData>({
         resolver: zodResolver(formSchema),
         mode: "onChange",
@@ -49,6 +51,22 @@ export default function BusinessDetailsForm() {
             availability: "project-based",
         },
     });
+
+    useEffect(() => {
+        if (profile) {
+            const businessProfile = profile as ContractorProfile;
+            reset({
+                businessName: businessProfile.businessName || "",
+                hourlyRate: businessProfile.hourlyRate?.toString() || "",
+                serviceFee: businessProfile.serviceFee?.toString() || "",
+                availability: businessProfile.availability || "project-based",
+            })
+        }
+
+
+
+    }, [profile, reset])
+
 
     const onSubmit = (data: FormData) => {
         setIsSubmitting(true);
@@ -152,7 +170,7 @@ export default function BusinessDetailsForm() {
                             type="button"
                             onClick={() => router.back()}
                             variant="outline"
-                            className="flex-1 h-12 text-base font-medium"
+                            className="flex-1 h-12 text-base font-medium cursor-pointer"
                             text="Back"
                             isSubmitting={isSubmitting}
                             disabled={isSubmitting}
@@ -160,7 +178,7 @@ export default function BusinessDetailsForm() {
                         <OnboardingFormButton
                             type="submit"
                             size="lg"
-                            className={`flex-1 h-12 text-base font-medium ${isValid ? 'bg-primary-600 hover:bg-primary-700 text-white' : 'bg-gray-300 text-gray-500'}`}
+                            className={`flex-1 h-12 text-base font-medium cursor-pointer ${isValid ? 'bg-primary-600 hover:bg-primary-700 text-white' : 'bg-gray-300 text-gray-500'}`}
                             disabled={!isValid || isSubmitting}
                             text={isSubmitting ? "Saving..." : "Review Profile"}
                             isSubmitting={isSubmitting}

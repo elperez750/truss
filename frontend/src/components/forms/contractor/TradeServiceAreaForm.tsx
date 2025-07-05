@@ -14,6 +14,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useProfile } from "@/app/context/ProfileContext";
 import { ContractorProfile } from "@/types/profileTypes";
 import { useRef } from "react";
+import { setLS, getLS } from "@/lib/utils";
 
 
 // Mock data for trades and travel distances
@@ -38,10 +39,8 @@ const travelDistances = [
 const formSchema = z.object({
     primaryTrade: z.string().min(1, "Please select your primary trade."),
     baseLocation: z.string().min(3, "Please enter a valid location."),
-    travelDistance: z.string().min(1, "Please select a travel distance."),
-
+    serviceArea: z.string().min(1, "Please select a travel distance."),
 });
-
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -51,6 +50,53 @@ export default function TradeServiceAreaForm() {
     const { user, isLoading } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const {
+        control,
+        handleSubmit,
+        formState: { errors, isValid },
+        reset,
+    } = useForm<FormData>({
+        resolver: zodResolver(formSchema),
+        mode: "onChange",
+        defaultValues: {
+            primaryTrade: (profile as ContractorProfile)?.primaryTrade || "",
+            baseLocation: (profile as ContractorProfile)?.baseLocation || "",
+            serviceArea: (profile as ContractorProfile)?.serviceArea || "",
+        },  
+    });
+
+    // Load form data from profile context when it changes
+    useEffect(() => {
+        if (profile) {
+            const contractorProfile = profile as ContractorProfile;
+            reset({
+                primaryTrade: contractorProfile.primaryTrade || "",
+                baseLocation: contractorProfile.baseLocation || "",
+                serviceArea: contractorProfile.serviceArea || "",
+            });
+        }
+    }, [profile, reset]);
+
+
+
+     
+    const onSubmit = (data: FormData) => {
+        setIsSubmitting(true);
+        console.log("Form Data:", data);
+        
+        updateProfile({
+            primaryTrade: data.primaryTrade,
+            baseLocation: data.baseLocation,
+            serviceArea: data.serviceArea,
+        });
+        
+        setTimeout(() => {
+            setIsSubmitting(false);
+            router.push("/onboarding/contractor/step2");
+        }, 1000);
+    };
+
+    // Conditional returns after all hooks
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -58,14 +104,6 @@ export default function TradeServiceAreaForm() {
             </div>
         );
     }
-
-    console.log("=== TradeServiceAreaForm Debug Info ===");
-    console.log("Auth state:", { user, isLoading });
-    console.log("User ID:", user?.id);
-    console.log("User email:", user?.email);
-    console.log("User metadata:", user?.user_metadata);
-    console.log("Profile state:", profile);
-    console.log("==========================================");
 
     if (!user) {
         return (
@@ -86,63 +124,6 @@ export default function TradeServiceAreaForm() {
         );
     }
 
-    const {
-        control,
-        handleSubmit,
-        formState: { errors, isValid },
-        watch,
-        reset,
-    } = useForm<FormData>({
-        resolver: zodResolver(formSchema),
-        mode: "onChange",
-        defaultValues: {
-            primaryTrade: (profile as ContractorProfile)?.primaryTrade ?? "",
-            baseLocation: (profile as ContractorProfile)?.baseLocation ?? "",
-            travelDistance: (profile as ContractorProfile)?.serviceArea ?? "",
-        },  
-
-    });
-
-    const watchedValues = watch();
-    const debounceRef = useRef<NodeJS.Timeout | null>(null);
-
-    useEffect(() => {
-        if (!watchedValues) return;
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-            updateProfile({
-                primaryTrade: watchedValues.primaryTrade,
-                baseLocation: watchedValues.baseLocation,
-                serviceArea: watchedValues.travelDistance,
-            });
-        }, 600);
-        // eslint-disable-next-line
-    }, [watchedValues.primaryTrade, watchedValues.baseLocation, watchedValues.travelDistance]);
-
-    useEffect(() => {
-        if (profile) {
-            reset({
-                primaryTrade: (profile as ContractorProfile).primaryTrade,
-                baseLocation: (profile as ContractorProfile).baseLocation,
-                travelDistance: (profile as ContractorProfile).serviceArea,
-            });
-        }
-    }, [profile, reset]);
-  
-    const onSubmit = (data: FormData) => {
-        setIsSubmitting(true);
-        console.log("Form Data:", data);
-        updateProfile({
-            primaryTrade: data.primaryTrade,
-            baseLocation: data.baseLocation,
-            serviceArea: data.travelDistance,
-        });
-        
-        setTimeout(() => {
-            setIsSubmitting(false);
-        }, 1000);
-    };
-
     return (
         <Card className="w-full max-w-2xl mx-auto shadow-lg border-0 bg-white mt-20">
             <CardHeader>
@@ -162,7 +143,11 @@ export default function TradeServiceAreaForm() {
                             name="primaryTrade"
                             control={control}
                             render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                <Select 
+                                    onValueChange={field.onChange} 
+                                    defaultValue={field.value} 
+                                    value={field.value}
+                                >
                                     <SelectTrigger id="primaryTrade" className="h-12 text-base w-full">
                                         <SelectValue placeholder="Select your main trade..." />
                                     </SelectTrigger>
@@ -201,21 +186,26 @@ export default function TradeServiceAreaForm() {
                     <div className="space-y-4">
                         <Label className="font-semibold text-neutral-700">How far will you travel for jobs?</Label>
                         <Controller
-                            name="travelDistance"
+                            name="serviceArea"
                             control={control}
                             render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}  >
+                                <Select 
+                                    onValueChange={field.onChange} 
+                                    defaultValue={field.value} 
+                                    value={field.value}
+                                >
                                     <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select your travel distances..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {travelDistances.map((item) => (
-                                    <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>
-                                ))}
-                            </SelectContent>
+                                        <SelectValue placeholder="Select your travel distances..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {travelDistances.map((item) => (
+                                            <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
                                 </Select>
                             )}
                         />
+                        {errors.serviceArea && <p className="text-sm text-red-600">{errors.serviceArea.message}</p>}
                     </div>
 
                     {/* Navigation Buttons */}
@@ -236,7 +226,7 @@ export default function TradeServiceAreaForm() {
                             disabled={!isValid || isSubmitting}
                             text={isSubmitting ? "Saving..." : "Next"}
                             isSubmitting={isSubmitting}
-                            onClick={() => router.push("/onboarding/contractor/step2")}
+                            onClick={() => {}}
                         />
                     </div>
                 </form>

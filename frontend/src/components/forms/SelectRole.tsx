@@ -1,23 +1,14 @@
 'use client'
 
-import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/context/AuthContext";
-import { useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/app/context/ProfileContext";
 
 
 export default function SelectRole() {
     const router = useRouter();
-    const { profile, updateProfile, setRole, role } = useProfile();
-
-
-    
-
-
+    const { role, setRole } = useProfile();
 
 
     const handleContinue = () => {

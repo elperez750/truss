@@ -31,7 +31,7 @@ export type ContractorProfile = BaseProfile & {
 
     //Step 3
     specialties: string[];
-    yearsExperience: number;
+    yearsExperience: string;
     emergencyService?: boolean;
 
 

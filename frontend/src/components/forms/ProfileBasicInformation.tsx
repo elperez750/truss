@@ -39,38 +39,51 @@ export default function ProfileBasicInformation() {
         resolver: zodResolver(basicInfoSchema),
         mode: "onChange",
         defaultValues: {
-            email: user?.email || "",
-            firstName: "",
-            lastName: "",
-            phoneNumber: "",
+            email: profile?.email || "",
+            firstName: profile?.firstName || "",
+            lastName: profile?.lastName || "",
+            phoneNumber: profile?.phoneNumber || "",
         },
     });
 
+    // Load profile data when component mounts or profile changes
+    useEffect(() => {
+        if (profile) {
+            reset({
+                email: profile.email || "",
+                firstName: profile.firstName || "",
+                lastName: profile.lastName || "",
+                phoneNumber: profile.phoneNumber || "",
+            });
+        } else if (user) {
+            // If no profile but user exists, load from user data
+            reset({
+                email: user.email || "",
+                firstName: user.user_metadata?.first_name || "",
+                lastName: user.user_metadata?.last_name || "",
+                phoneNumber: user.user_metadata?.phone_number || "",
+            });
+        }
+    }, [profile, user, reset]);
 
-
-    
     useEffect(() => {
         const fetchProfile = async () => {
-        const userData = await getUser()
-        console.log("userData", userData)
-        if (userData) { 
-            updateProfile({
-                email: userData.email ?? "",
-                firstName: userData.user_metadata?.first_name ?? "",
-                lastName: userData.user_metadata?.last_name ?? "",
-                phoneNumber: userData.user_metadata?.phone_number ?? "",
-            });
+            const userData = await getUser()
+            console.log("userData", userData)
+            if (userData && !profile) { 
+                updateProfile({
+                    email: userData.email ?? "",
+                    firstName: userData.user_metadata?.first_name ?? "",
+                    lastName: userData.user_metadata?.last_name ?? "",
+                    phoneNumber: userData.user_metadata?.phone_number ?? "",
+                });
 
-
-            setRole("client")
-            console.log("role", role)
-        }
+                setRole("client")
+                console.log("role", role)
+            }
         }
         fetchProfile()
-    }, [])
-
-
-
+    }, [profile, getUser, updateProfile, setRole, role])
 
     const onSubmit = (data: BasicInfoFormData) => {
         try {
