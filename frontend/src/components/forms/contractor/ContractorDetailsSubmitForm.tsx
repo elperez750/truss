@@ -40,7 +40,7 @@ const submitFormSchema = z.object({
     availability: z.enum(['full-time', 'part-time', 'project-based']).optional(),
 });
 
-type ContractorSubmitFormData = z.infer<typeof submitFormSchema>;
+export type ContractorSubmitFormData = z.infer<typeof submitFormSchema>;
 
 const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
     <div className="flex justify-between items-center py-2">
@@ -64,15 +64,22 @@ export default function ContractorDetailsSubmitForm() {
         }
     });
 
-    const onSubmit = (data: ContractorSubmitFormData) => {
+    const onSubmit = async (data: ContractorSubmitFormData) => {
         setIsSubmitting(true);
+
+
         console.log("Form submitted with data:", data);
         // Here you would typically send the data to your backend
         // For now, we'll just log it and navigate to a success page.
-        setTimeout(() => {
-            setIsSubmitting(false);
-            router.push('/onboarding/contractor/step5');
-        }, 2000);
+
+        const { submitContractorDetails } = await import('@/app/actions/contractor/submitProfile');
+        const message = await submitContractorDetails(data);  
+        console.log("message", message);
+        if (message.success) {
+            router.push('/onboarding/contractor/step6');
+        } else {
+            console.error("Error submitting profile:", message.message);
+        }
     };
     
     console.log("profile", profile);
@@ -162,7 +169,7 @@ export default function ContractorDetailsSubmitForm() {
                                     disabled={isSubmitting}
                                     text={isSubmitting ? "Submitting..." : "Submit Profile"}
                                     isSubmitting={isSubmitting}
-                                    onClick={() => {}}
+                                    onClick={handleSubmit(onSubmit)}
                                     className="flex-1 h-12 text-base font-medium bg-primary-600 hover:bg-primary-700 text-white cursor-pointer"
                                 />
                             </div>

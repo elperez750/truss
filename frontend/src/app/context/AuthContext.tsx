@@ -19,6 +19,7 @@ type AuthContextType = {
     signInWithEmail: (email: string, password: string) => Promise<void>,    
     signOut: () => Promise<void>,
     getUser: () => Promise<User | null>,
+    signInWithFacebook: () => Promise<void>,
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -34,6 +35,7 @@ export const AuthContext = createContext<AuthContextType>({
     signInWithEmail: async () => {},
     signOut: async () => {},
     getUser: async () => null,
+    signInWithFacebook: async () => {},
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -138,6 +140,65 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }
 
+
+    const signInWithFacebook = async () => {
+        try {
+            setIsLoading(true);
+            console.log('=== Facebook OAuth Debug ===');
+            console.log('Starting Facebook OAuth flow...');
+            console.log('Current URL:', window.location.href);
+            console.log('Redirect URL:', `${window.location.origin}/auth/callback`);
+            
+            // Check if we're in development mode
+            console.log('Environment:', process.env.NODE_ENV);
+            
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: "facebook",
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                    scopes: 'email, public_profile', // Explicitly request email and public profile
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    },
+                },
+            });
+            
+            console.log('Facebook OAuth response:', { data, error });
+            
+            if (error) {
+                console.error('Facebook OAuth error details:', {
+                    message: error.message,
+                    status: error.status,
+                    details: error
+                });
+                
+                // Handle specific email permission error
+                if (error.message.includes('email') || error.message.includes('external provider')) {
+                    setSignInError('Facebook email access requires verification. To test immediately:\n\n1. Go to Facebook Developer Console\n2. Navigate to Roles > Test Users\n3. Create a test user\n4. Use that test account to login\n\nOr complete Business Verification in App Review > Business Verification');
+                } else {
+                    setSignInError(`Facebook OAuth Error: ${error.message}`);
+                }
+                return;
+            }
+            
+            if (data?.url) {
+                console.log('Redirecting to Facebook URL:', data.url);
+                // The redirect should happen automatically
+            }
+            
+        } catch (error) {
+            console.error('Sign in error:', error);
+            if (error instanceof Error && (error.message.includes('email') || error.message.includes('external provider'))) {
+                setSignInError('Facebook email access is required but not available. Please:\n1. Check if you\'re added as a developer in the Facebook app\n2. Try with a test user\n3. Verify your Facebook account has a confirmed email');
+            } else {
+                setSignInError(error instanceof Error ? error.message : 'An unknown error occurred');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     const signUpWithEmail = async (email: string, password: string): Promise<boolean> => {
         try {
             setIsLoading(true);
@@ -192,7 +253,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, signInError, signUpError, signUpWithEmail, signInWithGoogle, signInWithEmail, signOut, setSignUpError, setSignInError, signInWithX, getUser }}>
+        <AuthContext.Provider value={{ user, isLoading, signInError, signUpError, signUpWithEmail, signInWithGoogle, signInWithEmail, signOut, setSignUpError, setSignInError, signInWithX, getUser, signInWithFacebook }}>
             {children}
         </AuthContext.Provider>
     )
